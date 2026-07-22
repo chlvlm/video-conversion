@@ -1,0 +1,9 @@
+# 源视频与转换产物（体积大，本地保留）
+/source/*
+!/source/.gitkeep
+/m3u8/*
+!/m3u8/.gitkeep
+
+# 系统与本地工具
+.DS_Store
+.serena/
