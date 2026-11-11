@@ -3,6 +3,7 @@
 !/source/.gitkeep
 /m3u8/*
 !/m3u8/.gitkeep
+/compressed/*
 
 # 系统与本地工具
 .DS_Store

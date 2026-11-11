@@ -27,6 +27,32 @@ brew install ffmpeg
 
 ## 使用方法
 
+### 压缩为 MP4
+
+批量压缩 `source/` 中除 `f8.mp4` 外的 MP4，并自动备份当前成品：
+
+```bash
+./compress-all.sh
+```
+
+默认 HEVC、CRF 24；如需更保画质，可运行 `./compress-all.sh --crf 22`。也可用 `--codec` 调整编码。新成品放在 `compressed/` 根目录，旧成品放在带时间戳的 `previous_.../` 子目录。该入口使用固定参数一次编码，保证每个输入都有成品，但它属于有损压缩，仍需查看暗部和细字。
+
+单独压缩某段视频，或使用自动相似度门槛：
+
+```bash
+./compress-video.sh c10_banner.mp4
+# 需要 H.264 播放兼容性时
+./compress-video.sh c10_banner.mp4 --codec h264
+# 更保画质
+./compress-video.sh c10_banner.mp4 --crf 22
+# 可选：按全片 SSIM 自动试压
+./compress-video.sh c10_banner.mp4 --auto --min-ssim 0.997
+```
+
+输出位于 `compressed/`，文件名包含编码和 CRF 值，例如 `c10_banner_hevc_crf24.mp4`。单文件脚本默认使用 H.265/HEVC、CRF 24、`slow` 预设。加 `--auto` 才会试压 CRF 14–30：对完整视频计算 SSIM，只保留 SSIM 不低于 0.995 且比原片小的成品；找不到达标版本时保留原片。脚本保留原分辨率和帧率；如有音轨则编码为 AAC。已存在的输出文件不会被覆盖。SSIM 是相似度指标，不能保证肉眼完全无差异；最终使用前仍应检查暗部、细字和运动画面。HEVC 播放端需要支持 HEVC，网站发布前请用目标浏览器和设备验证。
+
+### 转换为 HLS
+
 1. 将源视频放到 `source/`（例如 `source/a8.mp4`）
 2. 在项目根目录执行脚本
 
