@@ -7,13 +7,14 @@ OUTPUT_DIR="$ROOT/compressed"
 CODEC=hevc
 CRF=24
 AUTO=0
+NO_AUDIO=0
 CRF_SPECIFIED=0
 MIN_SSIM=0.995
 INPUT=""
 
 usage() {
   cat <<'EOF'
-用法: ./compress-video.sh <视频文件> [--codec hevc|h264] [--crf 14-30] [--auto] [--min-ssim 0.995]
+用法: ./compress-video.sh <视频文件> [--codec hevc|h264] [--crf 14-30] [--no-audio] [--auto] [--min-ssim 0.995]
 
 视频文件可写 source/ 下的文件名，也可写完整或相对路径。
 默认 H.265/HEVC、CRF 24；--crf 22 可获得更保画质的成品。
@@ -21,6 +22,7 @@ usage() {
 自动试压的默认 SSIM 门槛为 0.995；它不能保证肉眼完全无差异。
 CRF 越小画质越高、文件通常越大。
 成品在 compressed/，已存在的文件不会被覆盖。
+--no-audio 会移除音轨，输出文件名添加 _no_audio。
 EOF
 }
 
@@ -39,6 +41,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --auto)
       AUTO=1
+      shift
+      ;;
+    --no-audio)
+      NO_AUDIO=1
       shift
       ;;
     --min-ssim)
@@ -101,9 +107,12 @@ echo "输入: $INPUT"
 echo "编码: $CODEC"
 
 audio_args=(-an)
-if [[ -n "$(ffprobe -v error -select_streams a:0 -show_entries stream=index -of csv=p=0 "$INPUT")" ]]; then
+if [[ "$NO_AUDIO" -eq 0 && -n "$(ffprobe -v error -select_streams a:0 -show_entries stream=index -of csv=p=0 "$INPUT")" ]]; then
   audio_args=(-c:a aac -b:a 128k)
 fi
+
+output_suffix=""
+if [[ "$NO_AUDIO" -eq 1 ]]; then output_suffix="_no_audio"; fi
 
 encode() {
   local quality="$1" target="$2"
@@ -118,7 +127,7 @@ encode() {
 }
 
 if [[ "$AUTO" -eq 0 ]]; then
-  output="$OUTPUT_DIR/${name%.*}_${CODEC}_crf${CRF}.mp4"
+  output="$OUTPUT_DIR/${name%.*}_${CODEC}_crf${CRF}${output_suffix}.mp4"
   if [[ -e "$output" ]]; then echo "输出已存在: $output" >&2; exit 1; fi
   encode "$CRF" "$output"
   echo "完成: $output"
@@ -166,7 +175,7 @@ if [[ -z "$best_crf" ]]; then
   exit 2
 fi
 
-output="$OUTPUT_DIR/${name%.*}_${CODEC}_crf${best_crf}.mp4"
+output="$OUTPUT_DIR/${name%.*}_${CODEC}_crf${best_crf}${output_suffix}.mp4"
 if [[ -e "$output" ]]; then
   echo "达标成品已存在: $output"
   exit 0
